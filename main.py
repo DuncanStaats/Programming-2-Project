@@ -20,6 +20,12 @@ while True:
         if event.type == pygame.QUIT:
             pygame.quit()
             exit()
+    
+    keys = pygame.key.get_pressed()
+    if keys[pygame.K_LEFT] or keys[pygame.K_a]:
+        player.x -= 5
+    if keys[pygame.K_RIGHT] or keys[pygame.K_d]:
+        player.x += 5
 
     draw()
     pygame.display.update()
