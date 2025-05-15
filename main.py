@@ -1,6 +1,7 @@
 import pygame 
 from sys import exit
 import os
+import random
 
 GAME_WIDTH = 512  #Change Later, to file size if you want the full background
 GAME_HEIGHT = 512
@@ -19,17 +20,23 @@ FRICTION = 0.4
 PLAYER_VELOCITY_X = 5
 PLAYER_VELOCITY_Y = -11
 
+FRUIT_GRAVITY = 0.05
+FRUIT_WIDTH = 36 #change to ratio
+FRUIT_HEIGHT = 30
+
 def load_image(image_name, scale=None):
     image = pygame.image.load(os.path.join("image", image_name))
     if scale is not None:
         image = pygame.transform.scale(image, scale)
     return image
+
 background_image = load_image("Tree_background.webp") #("FILE_NAME")
 player_image_right = load_image("Sprite_image_test.png", (PLAYER_WIDTH, PLAYER_HEIGHT))#(""FILE") #image draws from the top right, still a rectangle
 player_image_left = load_image("Sprite_image_test1.png", (PLAYER_WIDTH, PLAYER_HEIGHT))
 player_image_jump_right = load_image("Sprite_image_test2.png", (PLAYER_JUMP_WIDTH, PLAYER_JUMP_HEIGHT))
 player_image_jump_left = load_image("Sprite_image_test3.png", (PLAYER_JUMP_WIDTH, PLAYER_JUMP_HEIGHT))
 floor_tile_image = load_image("Lava Tile.png", (TILE_SIZE, TILE_SIZE))
+fruit_image = load_image("Fruit.png", (FRUIT_WIDTH, FRUIT_HEIGHT))
 
 
 pygame.init()
@@ -58,16 +65,27 @@ class Player(pygame.Rect):
             elif self.direction == "left":
                 self.image = player_image_left
 
+class Fruit(pygame.Rect):
+    def __init__(self, x, y):
+        pygame.Rect.__init__(self, x, y, FRUIT_WIDTH, FRUIT_HEIGHT)
+        self.image = fruit_image
+        self.velocity_y = 0
+
 class Tile(pygame.Rect):
     def __init__(self, x, y, image):
         pygame.Rect.__init__(self, x, y, TILE_SIZE, TILE_SIZE)
         self.image = image
 
-def create_map():
-    for i in range(4):
-        tile = Tile(player.x + i*TILE_SIZE, player.y + TILE_SIZE*2, floor_tile_image)
-        tiles.append(tile)
+def fruit_falling():
+    while True:
+        if number_fruit == 0:
+            for i in range(1):
+                random_x = random.randint(0, (GAME_WIDTH // TILE_SIZE) - 1)
+                fruit = Fruit(TILE_SIZE * random_x, 0)
+                fruits.append(fruit)
+                continue
 
+def create_map():
     for i in range(16):
         tile = Tile(i*TILE_SIZE, player.y + TILE_SIZE*5, floor_tile_image)
         tiles.append(tile)
@@ -76,30 +94,30 @@ def create_map():
         tile = Tile(TILE_SIZE*3, (i+10)*TILE_SIZE, floor_tile_image)
         tiles.append(tile)
 
-def check_tile_collision():
+def check_tile_collision(character):
     for tile in tiles:
-        if player.colliderect(tile):
+        if character.colliderect(tile):
             return tile
     return None
     
-def check_tile_collisionx():
-    tile = check_tile_collision()
+def check_tile_collisionx(character):
+    tile = check_tile_collision(character)
     if tile is not None:
-        if player.velocity_x < 0:
-            player.x = tile.x + tile.width
-        elif player.velocity_x > 0:
-            player.x = tile.x - player.width
-        player.velocity_x = 0
+        if character.velocity_x < 0:
+            character.x = tile.x + tile.width
+        elif character.velocity_x > 0:
+            character.x = tile.x - character.width
+        character.velocity_x = 0
 
-def check_tile_collisiony():
-    tile = check_tile_collision()
+def check_tile_collisiony(character):
+    tile = check_tile_collision(character)
     if tile is not None:
-        if player.velocity_y < 0:
-            player.y = tile.y + tile.height
-        elif player.velocity_y > 0:
-            player.y = tile.y - player.height
-            player.jumping = False
-        player.velocity_y = 0
+        if character.velocity_y < 0:
+            character.y = tile.y + tile.height
+        elif character.velocity_y > 0:
+            character.y = tile.y - character.height
+            character.jumping = False
+        character.velocity_y = 0
 
 def move():
     if player.direction == "left" and player.velocity_x < 0:
@@ -115,11 +133,19 @@ def move():
     elif player.x + player.width > GAME_WIDTH:
         player.x = GAME_WIDTH - player.width
 
-    check_tile_collisionx()
+    check_tile_collisionx(player)
 
     player.velocity_y += GRAVITY
     player.y += player.velocity_y
-    check_tile_collisiony()
+
+    check_tile_collisiony(player)
+    for fruit in fruits: 
+        fruit.velocity_y += FRUIT_GRAVITY
+        fruit.y += fruit.velocity_y
+        check_tile_collisiony(fruit)
+
+        if player.colliderect(fruit):
+            print("Collision")
 
 def draw():
     window.fill("blue") #can use rgb colors tuple (())
@@ -130,8 +156,11 @@ def draw():
 
     player.update_image()
     window.blit(player.image, player)
+    for fruit in fruits:
+        window.blit(fruit.image, fruit)
 
 player = Player()
+fruits = []
 tiles = []
 create_map()
 
