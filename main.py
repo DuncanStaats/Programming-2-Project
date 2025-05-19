@@ -77,6 +77,7 @@ class Tile(pygame.Rect):
         self.image = image
 
 def fruit_falling():
+    number_fruit = 0
     while True:
         if number_fruit == 0:
             for i in range(1):
@@ -84,6 +85,8 @@ def fruit_falling():
                 fruit = Fruit(TILE_SIZE * random_x, 0)
                 fruits.append(fruit)
                 continue
+        elif number_fruit == 1:
+            continue
 
 def create_map():
     for i in range(16):
@@ -156,6 +159,7 @@ def draw():
 
     player.update_image()
     window.blit(player.image, player)
+    
     for fruit in fruits:
         window.blit(fruit.image, fruit)
 
