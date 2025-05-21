@@ -21,8 +21,10 @@ PLAYER_VELOCITY_X = 5
 PLAYER_VELOCITY_Y = -11
 
 FRUIT_GRAVITY = 0.05
+FRUIT_GRAVITY_INCREASE = 0
 FRUIT_WIDTH = 36 #change to ratio
 FRUIT_HEIGHT = 30
+FRUIT_COUNT = 0
 
 def load_image(image_name, scale=None):
     image = pygame.image.load(os.path.join("image", image_name))
@@ -76,26 +78,16 @@ class Tile(pygame.Rect):
         pygame.Rect.__init__(self, x, y, TILE_SIZE, TILE_SIZE)
         self.image = image
 
-def fruit_falling():
-    number_fruit = 0
-    while True:
-        if number_fruit == 0:
-            for i in range(1):
-                random_x = random.randint(0, (GAME_WIDTH // TILE_SIZE) - 1)
-                fruit = Fruit(TILE_SIZE * random_x, 0)
-                fruits.append(fruit)
-                continue
-        elif number_fruit == 1:
-            continue
-
 def create_map():
-    for i in range(16):
-        tile = Tile(i*TILE_SIZE, player.y + TILE_SIZE*5, floor_tile_image)
+    for i in range(13):
+        tile = Tile((i+3)*TILE_SIZE, player.y + TILE_SIZE*6, floor_tile_image)
         tiles.append(tile)
 
     for i in range(3):
-        tile = Tile(TILE_SIZE*3, (i+10)*TILE_SIZE, floor_tile_image)
+        tile = Tile(i*TILE_SIZE, 11.5*TILE_SIZE, floor_tile_image)
         tiles.append(tile)
+
+    spawn_fruit()
 
 def check_tile_collision(character):
     for tile in tiles:
@@ -123,6 +115,8 @@ def check_tile_collisiony(character):
         character.velocity_y = 0
 
 def move():
+    global FRUIT_COUNT
+
     if player.direction == "left" and player.velocity_x < 0:
         player.velocity_x += FRICTION
     elif player.direction == "right" and player.velocity_x > 0:
@@ -146,9 +140,31 @@ def move():
         fruit.velocity_y += FRUIT_GRAVITY
         fruit.y += fruit.velocity_y
         check_tile_collisiony(fruit)
+        
+        if player.colliderect(fruit): 
+            fruits.remove(fruit)
+            FRUIT_COUNT += 1
+            spawn_fruit() 
+            break 
 
-        if player.colliderect(fruit):
-            print("Collision")
+    gravity_increase()
+
+    return FRUIT_COUNT
+
+def gravity_increase():
+    global FRUIT_GRAVITY, FRUIT_GRAVITY_INCREASE
+
+    if FRUIT_COUNT // 15 > FRUIT_GRAVITY_INCREASE:
+        FRUIT_GRAVITY += 0.025
+        FRUIT_GRAVITY_INCREASE = FRUIT_COUNT // 15
+        print(FRUIT_GRAVITY)
+
+    return FRUIT_GRAVITY, FRUIT_GRAVITY_INCREASE
+
+def spawn_fruit():
+    random_x = random.randint(0, (GAME_WIDTH // TILE_SIZE) - 1) * TILE_SIZE
+    fruit = Fruit(random_x, 0)
+    fruits.append(fruit)
 
 def draw():
     window.fill("blue") #can use rgb colors tuple (())
