@@ -17,6 +17,7 @@ PLAYER_DISTANCE = 5
 
 GRAVITY = 0.5
 FRICTION = 0.4
+DEATH_FLOOR = GAME_HEIGHT - PLAYER_HEIGHT
 PLAYER_VELOCITY_X = 5
 PLAYER_VELOCITY_Y = -11
 
@@ -113,6 +114,9 @@ def check_tile_collisiony(character):
             character.y = tile.y - character.height
             character.jumping = False
         character.velocity_y = 0
+
+    if player.bottom > DEATH_FLOOR:
+        player.topleft(GAME_WIDTH / 2, GAME_HEIGHT - 2*PLAYER_HEIGHT)
 
 def move():
     global FRUIT_COUNT

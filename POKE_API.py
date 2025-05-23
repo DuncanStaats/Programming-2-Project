@@ -34,10 +34,10 @@ def fetch_pokemon(pokemon_id: int) -> dict:
 
 root = tk.Tk()
 root.title("Random Pokémon Generator")
-root.geometry("300x350")
+root.geometry("350x350")
 root.resizable(False, False)
         
-def fetch_image(url: str, pokemon_id: int) -> ImageTk.PhotoImage:
+def fetch_image(url: str) -> ImageTk.PhotoImage:
     img_bytes = requests.get(url, timeout=10).content
     pillow_image = Image.open(io.BytesIO(img_bytes)).resize((200, 200))
     return ImageTk.PhotoImage(pillow_image)
