@@ -14,6 +14,7 @@ PLAYER_HEIGHT = 48 #maintain ratio of sprite image
 PLAYER_JUMP_WIDTH = 52
 PLAYER_JUMP_HEIGHT = 60
 PLAYER_DISTANCE = 5
+PLAYER_LIFE_COUNT = 3
 
 GRAVITY = 0.5
 FRICTION = 0.4
@@ -106,6 +107,7 @@ def check_tile_collisionx(character):
         character.velocity_x = 0
 
 def check_tile_collisiony(character):
+    global PLAYER_LIFE_COUNT
     tile = check_tile_collision(character)
     if tile is not None:
         if character.velocity_y < 0:
@@ -116,10 +118,17 @@ def check_tile_collisiony(character):
         character.velocity_y = 0
 
     if player.bottom > DEATH_FLOOR:
-        player.topleft(GAME_WIDTH / 2, GAME_HEIGHT - 2*PLAYER_HEIGHT)
+        player.topleft = (GAME_WIDTH / 2, GAME_HEIGHT - 2*PLAYER_HEIGHT)
+        PLAYER_LIFE_COUNT -= 1
+
+    if PLAYER_LIFE_COUNT == 0:
+        pygame.quit()
+        exit()
+
+    return PLAYER_LIFE_COUNT
 
 def move():
-    global FRUIT_COUNT
+    global FRUIT_COUNT, PLAYER_LIFE_COUNT
 
     if player.direction == "left" and player.velocity_x < 0:
         player.velocity_x += FRICTION
@@ -140,20 +149,25 @@ def move():
     player.y += player.velocity_y
 
     check_tile_collisiony(player)
-    for fruit in fruits: 
+    for fruit in fruits[:]:
         fruit.velocity_y += FRUIT_GRAVITY
         fruit.y += fruit.velocity_y
-        check_tile_collisiony(fruit)
-        
-        if player.colliderect(fruit): 
+
+        for tile in tiles:
+            if fruit.colliderect(tile):
+                fruits.remove(fruit)
+                PLAYER_LIFE_COUNT -= 1
+                spawn_fruit()
+                break
+
+        if player.colliderect(fruit):
             fruits.remove(fruit)
             FRUIT_COUNT += 1
-            spawn_fruit() 
-            break 
+            spawn_fruit()
 
     gravity_increase()
 
-    return FRUIT_COUNT
+    return FRUIT_COUNT, PLAYER_LIFE_COUNT
 
 def gravity_increase():
     global FRUIT_GRAVITY, FRUIT_GRAVITY_INCREASE
@@ -169,6 +183,13 @@ def spawn_fruit():
     random_x = random.randint(0, (GAME_WIDTH // TILE_SIZE) - 1) * TILE_SIZE
     fruit = Fruit(random_x, 0)
     fruits.append(fruit)
+
+def game_over():
+    game_over_text = FONT.render("GAME OVER", True, (200,200,200))
+    score_text = FONT.render(f"Y0u Caught {FRUIT_COUNT} Fruits", True, (200,200,200))
+    DISPLAY.fill((0,0,0))
+    DISPLAY.blit(game_over_text, (GAME_WIDTH / 2 - game_over_text.get_width()/2), (GAME_HEIGHT/2 - score_text.get_height()/2))
+    DISPLAY.blit(score_text, (GAME_WIDTH / 2 - score_text.get_width()/2), (GAME_HEIGHT/2 - score_text.get_height()*1.5))
 
 def draw():
     window.fill("blue") #can use rgb colors tuple (())
