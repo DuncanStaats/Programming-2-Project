@@ -6,6 +6,8 @@ import random
 GAME_WIDTH = 512  #Change Later, to file size if you want the full background
 GAME_HEIGHT = 512
 TILE_SIZE = 32
+GAME_RUNNING = True
+GAME_OVER = False
 
 PLAYERX = GAME_WIDTH / 2
 PLAYERY = GAME_HEIGHT / 2
@@ -47,6 +49,7 @@ pygame.init()
 window = pygame.display.set_mode((GAME_WIDTH, GAME_HEIGHT))
 pygame.display.set_caption("Duncan's Catching Fruit - Pygame")
 clock = pygame.time.Clock()
+FONT = pygame.font.SysFont(None, 36)
 
 class Player(pygame.Rect):
     def __init__(self):
@@ -107,7 +110,7 @@ def check_tile_collisionx(character):
         character.velocity_x = 0
 
 def check_tile_collisiony(character):
-    global PLAYER_LIFE_COUNT
+    global PLAYER_LIFE_COUNT, GAME_RUNNING, GAME_OVER
     tile = check_tile_collision(character)
     if tile is not None:
         if character.velocity_y < 0:
@@ -122,10 +125,10 @@ def check_tile_collisiony(character):
         PLAYER_LIFE_COUNT -= 1
 
     if PLAYER_LIFE_COUNT == 0:
-        pygame.quit()
-        exit()
+        GAME_RUNNING = False
+        GAME_OVER = True
 
-    return PLAYER_LIFE_COUNT
+    return PLAYER_LIFE_COUNT, GAME_RUNNING, GAME_OVER
 
 def move():
     global FRUIT_COUNT, PLAYER_LIFE_COUNT
@@ -185,12 +188,21 @@ def spawn_fruit():
     fruits.append(fruit)
 
 def game_over():
-    game_over_text = FONT.render("GAME OVER", True, (200,200,200))
-    score_text = FONT.render(f"Y0u Caught {FRUIT_COUNT} Fruits", True, (200,200,200))
-    DISPLAY.fill((0,0,0))
-    DISPLAY.blit(game_over_text, (GAME_WIDTH / 2 - game_over_text.get_width()/2), (GAME_HEIGHT/2 - score_text.get_height()/2))
-    DISPLAY.blit(score_text, (GAME_WIDTH / 2 - score_text.get_width()/2), (GAME_HEIGHT/2 - score_text.get_height()*1.5))
+    game_over_text = FONT.render("GAME OVER", True, (200, 200, 200))
+    score_text = FONT.render(f"You Caught {FRUIT_COUNT} Fruits", True, (200, 200, 200))
+    window.fill((0, 0, 0))
+    window.blit(game_over_text, (GAME_WIDTH / 2 - game_over_text.get_width() / 2, GAME_HEIGHT / 2 - 50))
+    window.blit(score_text, (GAME_WIDTH / 2 - score_text.get_width() / 2, GAME_HEIGHT / 2 + 10))
+    pygame.display.update()
 
+def display_score(x, y):
+    score_img = font.render(f"Total Score: {str(FRUIT_COUNT)}", True, [0, 0, 0])
+    window.blit(score_img, (x, y))
+
+def display_life(x, y):
+    score_img = font.render(f"Life Count: {str(PLAYER_LIFE_COUNT)}", True, [0, 0, 0])
+    window.blit(score_img, (x, y))
+    
 def draw():
     window.fill("blue") #can use rgb colors tuple (())
     window.blit(background_image, (0,0)) #Order matters, image after #change position by changing numbers'
@@ -203,6 +215,14 @@ def draw():
     
     for fruit in fruits:
         window.blit(fruit.image, fruit)
+    
+    display_score(fontX, fontY + 25)
+    display_life(fontX, fontY)
+
+pygame.font.init()
+font = pygame.font.Font("freesansbold.ttf", 15)
+fontX = 15
+fontY = 15
 
 player = Player()
 fruits = []
@@ -230,3 +250,9 @@ while True:
     draw()
     pygame.display.update()
     clock.tick(60)
+
+    if GAME_OVER:
+        game_over()
+        pygame.time.wait(5000)
+        pygame.quit()
+        exit()
