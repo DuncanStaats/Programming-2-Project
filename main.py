@@ -1,18 +1,21 @@
+# Imports necessary modules
 import pygame 
 from sys import exit
 import os
 import random
 
-GAME_WIDTH = 512  #Change Later, to file size if you want the full background
+# Game constants
+GAME_WIDTH = 512
 GAME_HEIGHT = 512
 TILE_SIZE = 32
+
 GAME_RUNNING = True
 GAME_OVER = False
 
 PLAYERX = GAME_WIDTH / 2
 PLAYERY = GAME_HEIGHT / 2
-PLAYER_WIDTH = 42 #change later to fit sprite image
-PLAYER_HEIGHT = 48 #maintain ratio of sprite image
+PLAYER_WIDTH = 42
+PLAYER_HEIGHT = 48
 PLAYER_JUMP_WIDTH = 52
 PLAYER_JUMP_HEIGHT = 60
 PLAYER_DISTANCE = 5
@@ -26,32 +29,37 @@ PLAYER_VELOCITY_Y = -11
 
 FRUIT_GRAVITY = 0.05
 FRUIT_GRAVITY_INCREASE = 0
-FRUIT_WIDTH = 36 #change to ratio
+FRUIT_WIDTH = 36
 FRUIT_HEIGHT = 30
 FRUIT_COUNT = 0
 
+# Function for loading and Scaleing Images
 def load_image(image_name, scale=None):
+    """Load an image from the 'image' directory and scale if needed."""
     image = pygame.image.load(os.path.join("image", image_name))
     if scale is not None:
         image = pygame.transform.scale(image, scale)
     return image
 
-background_image = load_image("Tree_background.webp") #("FILE_NAME")
-player_image_right = load_image("Sprite_image_test.png", (PLAYER_WIDTH, PLAYER_HEIGHT))#(""FILE") #image draws from the top right, still a rectangle
+# Load game images
+background_image = load_image("Tree_background.webp")
+player_image_right = load_image("Sprite_image_test.png", (PLAYER_WIDTH, PLAYER_HEIGHT))
 player_image_left = load_image("Sprite_image_test1.png", (PLAYER_WIDTH, PLAYER_HEIGHT))
 player_image_jump_right = load_image("Sprite_image_test2.png", (PLAYER_JUMP_WIDTH, PLAYER_JUMP_HEIGHT))
 player_image_jump_left = load_image("Sprite_image_test3.png", (PLAYER_JUMP_WIDTH, PLAYER_JUMP_HEIGHT))
 floor_tile_image = load_image("Lava Tile.png", (TILE_SIZE, TILE_SIZE))
 fruit_image = load_image("Fruit.png", (FRUIT_WIDTH, FRUIT_HEIGHT))
 
-
+# Initialize pygame modules
 pygame.init()
 window = pygame.display.set_mode((GAME_WIDTH, GAME_HEIGHT))
 pygame.display.set_caption("Duncan's Catching Fruit - Pygame")
 clock = pygame.time.Clock()
 FONT = pygame.font.SysFont(None, 36)
 
+# Game Object Classes
 class Player(pygame.Rect):
+    """Player class with movement and image stuff."""
     def __init__(self):
         pygame.Rect.__init__(self, PLAYERX, PLAYERY, PLAYER_WIDTH, PLAYER_HEIGHT)
         self.image = player_image_right
@@ -61,6 +69,7 @@ class Player(pygame.Rect):
         self.jumping = False
 
     def update_image(self):
+        """Updates player image based on jump and direction it moves in."""
         if self.jumping:
             if self.direction == "right":
                 self.image = player_image_jump_right
@@ -73,17 +82,21 @@ class Player(pygame.Rect):
                 self.image = player_image_left
 
 class Fruit(pygame.Rect):
+    """Fruit class representing falling objects you collect."""
     def __init__(self, x, y):
         pygame.Rect.__init__(self, x, y, FRUIT_WIDTH, FRUIT_HEIGHT)
         self.image = fruit_image
         self.velocity_y = 0
 
 class Tile(pygame.Rect):
+    """Tile class representing floor blocks."""
     def __init__(self, x, y, image):
         pygame.Rect.__init__(self, x, y, TILE_SIZE, TILE_SIZE)
         self.image = image
 
+# Game Utility Functions
 def create_map():
+    """Create initial game map with floor tiles and spawn first fruit."""
     for i in range(13):
         tile = Tile((i+3)*TILE_SIZE, player.y + TILE_SIZE*6, floor_tile_image)
         tiles.append(tile)
@@ -95,12 +108,14 @@ def create_map():
     spawn_fruit()
 
 def check_tile_collision(character):
+    """Checks for collision between a character and a tile."""
     for tile in tiles:
         if character.colliderect(tile):
             return tile
     return None
-    
+
 def check_tile_collisionx(character):
+    """Solves horizontal collisions."""
     tile = check_tile_collision(character)
     if tile is not None:
         if character.velocity_x < 0:
@@ -110,6 +125,7 @@ def check_tile_collisionx(character):
         character.velocity_x = 0
 
 def check_tile_collisiony(character):
+    """Solves vertical collisions and checks death conditions."""
     global PLAYER_LIFE_COUNT, GAME_RUNNING, GAME_OVER
     tile = check_tile_collision(character)
     if tile is not None:
@@ -120,6 +136,7 @@ def check_tile_collisiony(character):
             character.jumping = False
         character.velocity_y = 0
 
+    # Fall below screen death
     if player.bottom > DEATH_FLOOR:
         player.topleft = (GAME_WIDTH / 2, GAME_HEIGHT - 2*PLAYER_HEIGHT)
         PLAYER_LIFE_COUNT -= 1
@@ -131,8 +148,10 @@ def check_tile_collisiony(character):
     return PLAYER_LIFE_COUNT, GAME_RUNNING, GAME_OVER
 
 def move():
+    """Applys movement, collision checks, and updates the fruit position."""
     global FRUIT_COUNT, PLAYER_LIFE_COUNT
 
+    # Applys horizontal friction
     if player.direction == "left" and player.velocity_x < 0:
         player.velocity_x += FRICTION
     elif player.direction == "right" and player.velocity_x > 0:
@@ -140,6 +159,7 @@ def move():
     else:
         player.velocity_x = 0
 
+    # Moves player horizontally
     player.x += player.velocity_x
     if player.x < 0:
         player.x = 0
@@ -148,10 +168,12 @@ def move():
 
     check_tile_collisionx(player)
 
+    # Applys gravity and vertical movement
     player.velocity_y += GRAVITY
     player.y += player.velocity_y
-
     check_tile_collisiony(player)
+
+    # Moves fruits and check for collisions
     for fruit in fruits[:]:
         fruit.velocity_y += FRUIT_GRAVITY
         fruit.y += fruit.velocity_y
@@ -173,6 +195,7 @@ def move():
     return FRUIT_COUNT, PLAYER_LIFE_COUNT
 
 def gravity_increase():
+    """Gradually increase fruit fall speed every 15 caught."""
     global FRUIT_GRAVITY, FRUIT_GRAVITY_INCREASE
 
     if FRUIT_COUNT // 15 > FRUIT_GRAVITY_INCREASE:
@@ -183,11 +206,13 @@ def gravity_increase():
     return FRUIT_GRAVITY, FRUIT_GRAVITY_INCREASE
 
 def spawn_fruit():
+    """Spawn a new fruit at a random position at the top of the screen."""
     random_x = random.randint(0, (GAME_WIDTH // TILE_SIZE) - 1) * TILE_SIZE
     fruit = Fruit(random_x, 0)
     fruits.append(fruit)
 
 def game_over():
+    """Display game over screen with final score."""
     game_over_text = FONT.render("GAME OVER", True, (200, 200, 200))
     score_text = FONT.render(f"You Caught {FRUIT_COUNT} Fruits", True, (200, 200, 200))
     window.fill((0, 0, 0))
@@ -196,16 +221,19 @@ def game_over():
     pygame.display.update()
 
 def display_score(x, y):
+    """Render the score text."""
     score_img = font.render(f"Total Score: {str(FRUIT_COUNT)}", True, [0, 0, 0])
     window.blit(score_img, (x, y))
 
 def display_life(x, y):
+    """Render the life count text."""
     score_img = font.render(f"Life Count: {str(PLAYER_LIFE_COUNT)}", True, [0, 0, 0])
     window.blit(score_img, (x, y))
-    
+
 def draw():
-    window.fill("blue") #can use rgb colors tuple (())
-    window.blit(background_image, (0,0)) #Order matters, image after #change position by changing numbers'
+    """Drawing all elements on the screen."""
+    window.fill("blue")
+    window.blit(background_image, (0,0))
 
     for tile in tiles:
         window.blit(tile.image, tile)
@@ -219,6 +247,7 @@ def draw():
     display_score(fontX, fontY + 25)
     display_life(fontX, fontY)
 
+# Fonts and Game Stuff
 pygame.font.init()
 font = pygame.font.Font("freesansbold.ttf", 15)
 fontX = 15
@@ -229,12 +258,14 @@ fruits = []
 tiles = []
 create_map()
 
+# Main Game Loop 
 while True:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
             exit()
     
+    # Keyboard input
     keys = pygame.key.get_pressed()
     if (keys[pygame.K_UP] or keys[pygame.K_w]) and not player.jumping:
         player.velocity_y = PLAYER_VELOCITY_Y
